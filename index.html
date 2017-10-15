@@ -4,14 +4,30 @@
     <title>Jake Land</title>
     <style type="text/css">
       body { background: #3278be }
-      img { position: absolute; bottom: 0px;}
-      div { margin: 0px auto; width: 500px;}
+      #jakethedog { position: absolute; bottom: 0px; width: 500px; }
+      div { margin: 0px auto; width: 500px; }
+      .rotate1 { transform: rotate(90deg); left: 0; }
+      .rotate3 { transform: rotate(-90deg); right: 0; }
+      .rotate2 { transform: rotate(180deg); top: 0; }
     </style>
   </head>
 
   <body>
       <div>
-        <img width="500" src="https://user-images.githubusercontent.com/137793/31588846-d68836aa-b1c5-11e7-9f4c-6188deb68715.gif" />
+        <img id="jakethedog" src="https://user-images.githubusercontent.com/137793/31588846-d68836aa-b1c5-11e7-9f4c-6188deb68715.gif" />
       </div>
+      <script type="text/javascript">
+        (function() {
+          var i = 0;
+          var rotate = function() {
+            var classList = document.querySelector('#jakethedog').classList;
+            classList.remove("rotate" + i);
+            i = (i + 1) % 4;
+            classList.add("rotate" + i);
+          }
+          setInterval(rotate, 3000)
+          
+        })()
+      </script>
   </body>
 </html>
