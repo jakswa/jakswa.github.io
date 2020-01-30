@@ -1,6 +1,86 @@
 <!DOCTYPE html>
 <html>
   <body>
-    I did it!
+    <h1></h1>
+
+    <h3>
+      Bus reports for this stop:
+    </h3>
+
+    <ul></ul>
+
+    <template id="bus-data">
+      <li>
+        <ul>
+          <li></li>
+          <li></li>
+          <li></li>
+          <li></li>
+          <li></li>
+        </ul>
+      </li>
+    </template>
+
+    <script type="text/javascript">
+      //let stopName = 'VIRGINIA AVE @ BARNETT ST';
+      //let stopName = 'MEMORIAL DR SE@BOULEVARD SE';
+      //let stopName = 'DEFOORS FERRY RD @ NOBLE CREEK DR';
+      let stopName = 'INMAN PARK/REYNOLDSTOWN STATION - NORTH LOOP';
+      let stopScheduleURL = 'https://rust.marta.io/stop_times?name=' + encodeURIComponent(stopName);
+
+      document.querySelector("h1").innerHTML = stopName;
+
+      let stopReq = fetch(stopScheduleURL).then(res => res.json());
+      let busReq = fetch('https://rust.marta.io/buses').then(res => res.json());
+
+      Promise.all([stopReq, busReq]).then(marryData);
+
+      function marryData(data) {
+        let stopData = data[0];
+        let now = (new Date((new Date()).getTime() - 600 * 1000)).toString().match(/\d{2}:\d{2}:\d{2}/)[0];
+
+        stopData.forEach(s => {
+          s.arrival_times = s.arrival_times.split(',');
+          let orig_length = s.arrival_times.length;
+          // easy way of saying "only show future scheduled stops...
+          // but doesn't take late/early into account
+          s.arrival_times = s.arrival_times.filter(i => i > now);
+          s.trip_ids = s.trip_ids.split(',').slice(orig_length - s.arrival_times.length);
+        });
+        let buses = data[1];
+        
+        let tripStops = {};
+        buses.forEach(b => {
+          let match = stopData.find(s => s.trip_ids.indexOf(b.TRIPID) > -1);
+          if (match) tripStops[b.TRIPID] = { schedule: match, bus: b };
+        });
+        
+        let list = document.querySelector('ul');
+        var template = document.querySelector('#bus-data');
+        for (let tripID in tripStops) {
+          let busElement = template.content.cloneNode(true);
+          
+          let trip = tripStops[tripID];
+          let seenAt = new Date(trip.bus.MSGTIME);
+          let rows = busElement.querySelectorAll("ul > li");
+          let timeIndex = trip.schedule.trip_ids.indexOf(tripID);
+          rows[0].textContent = `reported ${Math.round(((new Date()) - seenAt) / 60000)} min ago`;
+          rows[1].textContent = `${tripID}: ${trip.schedule.trip_headsign || `Route ${trip.schedule.route_short_name}`}`;
+          rows[2].textContent = `schedule arrival: ${trip.schedule.arrival_times[timeIndex]}`;
+          rows[3].textContent = `late/early: ${timingText(trip.bus.ADHERENCE)}`;
+          rows[4].textContent = `timepoint (??): ${trip.bus.TIMEPOINT}`;
+
+          
+          list.appendChild(busElement);
+        }
+      }
+
+      function timingText(adherence) {
+        if (adherence == 0) return "on time";
+        let lateEarly = adherence < 0 ? 'late' : 'early';
+        return `${Math.abs(adherence)} min ${lateEarly}`;
+      }
+    </script>
+
   </body>
 </html>
